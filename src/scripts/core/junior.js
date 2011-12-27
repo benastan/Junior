@@ -19,7 +19,7 @@ define(["../app/config"], function(config, Tools) {
 			// Available whenever Jr is running.
 			// lib: returns uri for requiring libraries.
 	Jr.utilities = {
-		lib = function(str) {
+		lib: function(str) {
 			return "../../lib/"+str;
 		},
 
@@ -27,7 +27,7 @@ define(["../app/config"], function(config, Tools) {
 		// Builds url and appends stylesheets to head.
 		// @str: name of stylesheet
 		// @abs: 
-		css = function(d, h) {
+		css: function(d, h) {
 			return function(stylesheetName, isAbsolute) {
 				if ((!isAbsolute) && config.css_path) {
 					stylesheetName = config.css_path + stylesheetName + '.css';
@@ -408,7 +408,7 @@ define(["../app/config"], function(config, Tools) {
 		return function() {
 
 			// If we aren't monitoring, begin monitoring.
-			if (!'interval' in argument.callee) {
+			if (!'interval' in arguments.callee) {
 				arguments.callee.interval = window.setInterval(function(Jr){
 					return function() {
 						Jr.monitor();
@@ -473,7 +473,7 @@ define(["../app/config"], function(config, Tools) {
 	Jr.loadController = function(state, args) {
 
 		// Get an jQuery object represing the events target. 
-		var events_tgt = $(config.jr_events_target),
+		var events_tgt = $(config.jr_events_target);
 		events_tgt.trigger('controllerLoad', state, args);
 		require(["../app/c/"+state], function(state, args) {
 			return function(action) {
@@ -529,7 +529,7 @@ define(["../app/config"], function(config, Tools) {
 				window.location = uri;
 			}
 		}
-	}(Jr)
+	}(Jr);
 	
 	// If there's an init controller, load it.
 	if (config.init_controller) {
