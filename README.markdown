@@ -1,7 +1,7 @@
 Junior
 ======
 
-#### An MVC Javascript Framework ####
+## An MVC Javascript Framework ##
 
 Junior (Jr), named for its use of jQuery (j) and RequireJS (R), is an ajax-driven, 
 object-oriented javascript framework and templating system that hopes to refocus
@@ -17,7 +17,7 @@ corresponding to changes in the URI.
 
 To get started, add the following `<script>` tag to your head:
 
-		<script type="text/javascript" src="scripts/require-jquery.js" data-main="scripts/core/init.js"></script>
+		<script type="text/javascript" src="scripts/require-jquery.js" data-main="scripts/core/init"></script>
 
 This will load RequireJS, using Junior's `init.js` as it's `data-main` file. From there, Junior will attempt
 to load a controller based on the route. If there is no route, Junior will look in your config file for a

@@ -1,34 +1,57 @@
 // Grab the config.js file, containing
 // the configuration object.
 define(["../app/config"], function(config, Tools) {
-	var Jr = {
-			load: {},
-			render: {}
-		},
+	
+	var 
+			// Jr declare Junior namespace
+			Jr = {
+				load: {},
+				render: {}
+			},
+			defaults = {
+				default_controller: 'index',
+				jr_events_target: 'body'
+			};
+
+			config = $.extend(defaults, config);
+			
+			// Utility functions lib and css.
+			// Available whenever Jr is running.
+			// lib: returns uri for requiring libraries.
+	Jr.utilities = {
 		lib = function(str) {
 			return "../../lib/"+str;
 		},
+
+		// Jr.utilities.css
+		// Builds url and appends stylesheets to head.
+		// @str: name of stylesheet
+		// @abs: 
 		css = function(d, h) {
-			return function(str, abs) {
-				if ((!abs) && config.css_path) {
-					str = config.css_path + str + '.css';
+			return function(stylesheetName, isAbsolute) {
+				if ((!isAbsolute) && config.css_path) {
+					stylesheetName = config.css_path + stylesheetName + '.css';
 				}
 				var s = d.createElement('link');
 				$.extend(s, {
-					href: str,
+					href: stylesheetName,
 					type: 'text/css',
 					rel: 'stylesheet'
 				});
 				h.appendChild(s);
 			}
-		}(document, document.getElementsByTagName('head')[0]);
-	$.extend(window, { 
-		lib: lib,
-		css: css
-	});
+		}(document, document.getElementsByTagName('head')[0])
+	};
 
+	// Add lib and css to window.
+	$.extend(window, Jr.utilities);
+
+	// Array of HTMLAnchorElements to be
+	// excepted from the Jr.goto function.
 	Jr.aExceptions = [];
 
+	// Finds the <script> tag that includes
+	//
 	Jr.getNamespace = function() {
 		var pos;
 		$('script').each(function() {
@@ -152,53 +175,130 @@ define(["../app/config"], function(config, Tools) {
 		return new Jr.ViewModel(this, model).render(cb);
 	}
 
+	// Object that combines a view and a model.
 	Jr.ViewModel = function(view, model) {
 		this.view = view;
 		this.model = model;
 	}
 	
+	// Does the work of rendering a Jr.ViewModel
 	Jr.ViewModel.prototype.render = function(cb) {
-		var parent_template = this.view.data.template,
+		var 
+				// Get the template from the view.
+				parent_template = this.view.data.template,
+
+				// Get the map from the view.
 				map = this.view.data.map,
+
+				// We make use of undefined, so make it
+				// local.
 				undefined,
+
+				// Get model.
 				data = this.model,
-				map_key, data_key, current_data, current_map, template_match, selector, attr, working_template;
+
+				// Variables we're going to use.
+				map_key,
+				data_key,
+				current_data,
+				current_map,
+				template_match,
+				selector,
+				attr,
+				working_template;
+
+		// Templates need to be jQuery objects.
+		// If it is a string or an HTMLElement,
+		// run it through jQuery.
 		if (!(parent_template instanceof jQuery)) {
 			parent_template = $(parent_template);
 		}
+
+		// If the model was a Jr.Model, get the
+		// actual data from it.
 		if (data instanceof Jr.Model) {
 			data = data.setData();
 		}
+
+		// Loop through the map.
 		for (map_key in map) {
+
+			// Reset the attr.
 			attr = undefined;
+
+			// If there is not a corresponding key in the data,
+			// move on to the next map_key.
 			if (!map_key in data) {
 				continue;
 			}
+
+			// Jr.DataMap objects make it easier to extract
+			// information about a value in a map.
 			current_map = new Jr.DataMap(map[map_key]);
+
+			// Get the selector to target in the template.
 			current_map.getSelector();
+
+			// Get the data that corresponds to the current map_key.
 			current_data = data[map_key];
+
+			// If a function was passed as the selector,
+			// run it, passing the template jQuery object as
+			// the context and the current_data as the arguments. 
+			// TODO: Pass state and args to these functions.
+			// TODO: Allow attr to be passed from these functions.
 			if (typeof current_map.selector === 'function') {
+				
+				// Run function.
 				selector = current_map.selector.apply(parent_template, [current_data]);
-			} else if (typeof current_map.selector === 'string') {
+			}
+			
+			// If it's a string, just set it as the selector.
+			else if (typeof current_map.selector === 'string') {
 				selector = current_map.selector;
 			}
+
+			// Now, if an attr was extracted, set the attr
+			// variable to it.
 			if ('attr' in current_map) {
 				attr = current_map.attr;
 			}
+
+			// If neither selector or attr could be extracted,
+			// there's nothing more we can do. Go on to the next
+			// map_key
 			if (!(selector || attr)) {
 				continue;
-			} else if (attr && (!selector)) {
+			}
+			
+			// If there is only the attribute, and no selector,
+			// set template_match to the parent_template.
+			else if (attr && (!selector)) {
 				template_match = parent_template;	
-			} else {
+			}
+			
+			// Otherwise, search for the selector within the
+			// parent_template.
+			else {
 				template_match = parent_template.find(selector);
 			}
+
+			// If there were no matching elements, continue on
+			// to the next map_key.
 			if (!template_match.length) {
 				continue;
 			}
+
+			// The fn attribute of a map is a function that
+			// preprocess the data.
 			if (typeof current_map.map.fn === 'function') {
 				current_data = current_map.map.fn.apply(template_match, [current_data]);
 			}
-			if (typeof current_data === 'string') {
+
+			// TODO: Finish commenting this function.
+			if (!current_data) {
+				continue;
+			} else if (typeof current_data === 'string') {
 				if (typeof attr === 'undefined') {
 					attr = 'html';
 				}
@@ -263,6 +363,8 @@ define(["../app/config"], function(config, Tools) {
 		}
 	}
 
+	// Wrapper for Jr.ViewModel.render executed
+	// by a constructed model.
 	Jr.Model.prototype.render = function() {
 		var view = arguments[0],
 				callback = arguments[1];
@@ -277,9 +379,7 @@ define(["../app/config"], function(config, Tools) {
 		}
 	}
 	
-	Jr.goto = function(uri) {
-		window.location = document.location.protocol+"//"+document.location.host+"/#!/"+uri;
-	}
+	// Returns the current hash representing the state.
 	Jr.getLocation = function() {
 		var hash = window.location.hash.substr(3);
 		while (hash.substr(hash.length - 1) == "/") {
@@ -287,6 +387,14 @@ define(["../app/config"], function(config, Tools) {
 		}
 		return hash;
 	}
+
+	// Relocate to a Jr uri.	
+	Jr.goto = function(uri) {
+		window.location = document.location.protocol+"//"+document.location.host+"/#!/"+uri;
+	}
+	
+	// Allow a callback to be executed if
+	// user clicks a link to the current page.
 	Jr.conditionalGoto = function(uri, cb) {
 		if (Jr.getLocation() !== uri) {
 			Jr.goto(uri);
@@ -298,40 +406,78 @@ define(["../app/config"], function(config, Tools) {
 	}
 	Jr.monitor = function(lib, css) {
 		return function() {
-			$.extend(window, { 
-				lib: lib,
-				css: css
-			});
-			var state = Jr.getLocation(),
-					load_action = false,
-					args;		
+
+			// If we aren't monitoring, begin monitoring.
+			if (!'interval' in argument.callee) {
+				arguments.callee.interval = window.setInterval(function(Jr){
+					return function() {
+						Jr.monitor();
+					}
+				}(Jr),200);
+			}
+			
+			// Ensure we always have utility functions.
+			$.extend(window, Jr.utilities);
+
+			var 
+					// Object to trigger events on.
+					events_tgt = $(config.jr_events_target),
+
+					// Get the URI from the hash.
+					state = Jr.getLocation(),
+
+					// Variable to store the rest of the URL segments. 
+					args,
+
+					// Flag for whether state and cached state meet certain
+					// conditions that warrant loading a new controller.
+					load_action = false;
+
+			// If state is empty, try loading default controller.
 			if (!state) {
-				state = config.default_controller ? config.default_controller : 'index';
+				state = 'default_controller' in config && config.default_controller ? config.default_controller : 'index';
 			}
-			if (!this.cache) {
+
+			// If there is no cached state, or the cached state
+			// does not equal the current state, load the controller
+			if (!this.cache || state !== this.cache) {
 				load_action = true;
-			} else {
-				if (state !== this.cache) {
-					load_action = true;
-				}
 			}
+
+			// Cache.
 			this.cache = state;
+
+			// Separate the arguments from the
+			// controller. First segment of the
+			// URI is the 
 			args = state.split('/');
 			state = args.shift();
-			$('body').trigger('monitorController', state, args);
+
+			// Trigger the monitorController event.
+			events_tgt.trigger('monitorController', state, args);
+
+			// If we are not loading a controller, we're done.
 			if (!load_action) {
 				return;
 			}
-			$('body').trigger('beforeControllerChange', [state, args]);
+			
+			// Trigger the beforeControllerChange event.
+			events_tgt.trigger('beforeControllerChange', [state, args]);
+
+			// Load the controller.
 			this.loadController(state, args);
 		}
 	}(lib, css);
 
+	// Loads and runs a controller.
 	Jr.loadController = function(state, args) {
-		$('body').trigger('controllerLoad', state, args);
+
+		// Get an jQuery object represing the events target. 
+		var events_tgt = $(config.jr_events_target),
+		events_tgt.trigger('controllerLoad', state, args);
 		require(["../app/c/"+state], function(state, args) {
 			return function(action) {
-				$('body').attr('id', state).attr('class', '').addClass(args.join('-'));
+				events_tgt.attr('id', state).attr('class', '').addClass(args.join('-'));
 				if (action !== true) {
 					switch (typeof action) {
 						case 'function':
@@ -350,12 +496,42 @@ define(["../app/config"], function(config, Tools) {
 							}
 							break;
 					}
-					$('body').trigger('afterControllerChange', state, args);
+					events_tgt.trigger('afterControllerChange', state, args);
 				}
 			}
 		}(state, args));
 	}
 
+	// Test if an element is an exception.
+	Jr.isException = function(element) {
+		if ('aExceptions' in Jr) {
+			for (var i in Jr.aExceptions) {
+				if (Jr.aExceptions[i] == this) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	// Bind this to anything with an href
+	// that you wish to act as a link.
+	Jr.link = function(Jr) {
+		return function(e) {
+			if (Jr.isException(this)) {
+				return;
+			}
+			e.preventDefault();
+			var uri = $(this).attr('href');
+			if (uri && (uri.indexOf('.') == -1) && (uri.indexOf(':') == -1)) {
+				Jr.goto(uri);
+			} else {
+				window.location = uri;
+			}
+		}
+	}(Jr)
+	
+	// If there's an init controller, load it.
 	if (config.init_controller) {
 		Jr.loadController(config.init_controller, []);
 	}
