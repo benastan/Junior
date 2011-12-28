@@ -12,16 +12,16 @@ all content as a web service.
 ### Setup ###
 
 With Junior, URL routes are handled by the Jr.monitor method. When Junior notices
-that the state of the app has changed, it uses RequireJS to load controller
+that the state of the app has changed, it uses RequireJS to load the controller
 corresponding to changes in the URI.
 
 To get started, add the following `<script>` tag to your head:
 
-		<script type="text/javascript" src="scripts/require-jquery.js" data-main="scripts/core/init"></script>
+		<script type="text/javascript" src="scripts/core/require-jquery.js" data-main="scripts/core/init"></script>
 
 This will load RequireJS, using Junior's `init.js` as it's `data-main` file. From there, Junior will attempt
-to load a controller based on the route. If there is no route, Junior will look in your config file for a
-`default_controller` property, and load that controller instead. If Junior finds an `init_controller` it will load that controller prior to loading any state-based controllers. (More on config files later.)
+to load a controller based on the URI route. If there is no route, Junior will look in your config file for a
+`default_controller` property, and load that controller instead. If Junior finds an `init_controller` it will load that controller prior to loading any state-based controllers. (More on config files to come.)
 
 ### The `app` folder ###
 
