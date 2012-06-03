@@ -1,6 +1,10 @@
 Junior
 ======
 
+Do not use this project in production. It was an experiment. I suggest [Backbone.js](https://github.com/documentcloud/backbone) as an alternative.
+
+If you are interested in one approach to JavaScript MVC, read on.
+
 ## An MVC Javascript Framework ##
 
 Junior (Jr), named for its use of jQuery (j) and RequireJS (R), is an ajax-driven, 
